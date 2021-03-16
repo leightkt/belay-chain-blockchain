@@ -1,13 +1,13 @@
 const encrypt = require('crypto-js/sha256')
 
 class Block {
-    constructor(index, timestamp, data, previousHash = '') {
+    constructor(index, timestamp, data, previousHash = '', nonce = 0) {
         this.index = index
         this.timestamp = timestamp
         this.data = data
         this.previousHash = previousHash
         this.hash = this.calculateHash()
-        this.nonce = 0
+        this.nonce = nonce
     }
 
     calculateHash() {
@@ -33,7 +33,7 @@ class Block {
 class Blockchain {
     constructor(){
         this.chain = [this.createGenesisBlock()]
-        this.difficulty = 5
+        this.difficulty = 4
     }
 
     createGenesisBlock() {
@@ -47,6 +47,7 @@ class Blockchain {
     addBlock(newBlock) {
         newBlock.previousHash = this.getLatestBlock().hash
         newBlock.mineBlock(this.difficulty)
+        // newBlock.hash = newBlock.calculateHash()
         this.chain.push(newBlock)
     }
 
@@ -66,19 +67,39 @@ class Blockchain {
 
         return true
     }
+
+    validateBlock(blockToVerify) {
+        blockToVerify.hash = blockToVerify.calculateHash()
+        if(this.chain[blockToVerify.index].hash === blockToVerify.hash){
+            console.log(true)
+        } else {
+            console.log(blockToVerify)
+        }
+    }
 }
 
 
 let Katchain = new Blockchain()
 console.log("mining block 1. . . .")
-Katchain.addBlock(new Block(1, Date.now(), {amount: 4}))
-console.log("mining block 2. . . .")
-Katchain.addBlock(new Block(2, Date.now(), {amount: 4}))
+let data1 = {
+    gym_id: 1,
+    user_member_number: 1234,
+    cert_type: "Lead"
+}
+Katchain.addBlock(new Block(1, Date.now(), data1))
+
 
 // console.log(JSON.stringify(Katchain, null, 4))
-// console.log(JSON.stringify(Katchain.getLatestBlock(), null, 4))
+console.log(Katchain.getLatestBlock())
+console.log(JSON.stringify(Katchain.getLatestBlock(), null, 4))
 // console.log('Is blockchain valid?', Katchain.isChainValid())
 
 // Katchain.chain[1].data = { amount: 100}
 // Katchain.chain[1].hash = Katchain.chain[1].calculateHash()
 // console.log('Is blockchain valid?', Katchain.isChainValid())
+let strungifiedIT = JSON.stringify(Katchain.getLatestBlock())
+let lastBlockObj = JSON.parse(strungifiedIT)
+
+lastBlock = new Block(lastBlockObj.index, lastBlockObj.timestamp, lastBlockObj.data, lastBlockObj.previousHash, lastBlockObj.nonce)
+
+console.log(Katchain.validateBlock(lastBlock))
