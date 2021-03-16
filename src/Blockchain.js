@@ -37,17 +37,23 @@ class Blockchain {
     }
 
     createGenesisBlock() {
-        return new Block(0, Date.now(), "Genesis Block", "0")
+        return new Block(0, Date.now(), "Lynn Hill is GOAT", "0")
     }
 
     getLatestBlock() {
         return this.chain[this.chain.length - 1]
     }
 
-    addBlock(newBlock) {
+    addBlock(data) {
+        const newBlock = new Block(
+            this.chain.length,
+            Date.now(),
+            data
+        )
         newBlock.previousHash = this.getLatestBlock().hash
         newBlock.mineBlock(this.difficulty)
         this.chain.push(newBlock)
+        return newBlock
     }
 
     isChainValid() {
@@ -80,54 +86,56 @@ class Blockchain {
         return this.chain.filter(block => block.data.gym_id === gym_id)
     }
 
-    findAllUserBlocks(user_member_number, gym_id) {
+    findAllMemberBlocks(user_member_number, gym_id) {
         return this.chain.filter(block => block.data.gym_id === gym_id && block.data.user_member_number === user_member_number)
     }
 }
 
+module.exports = Blockchain
 
-let Katchain = new Blockchain()
-console.log("mining block 1. . . .")
-let data1 = {
-    gym_id: 1,
-    user_member_number: 1234,
-    cert_type: "Lead"
-}
-Katchain.addBlock(new Block(1, Date.now(), data1))
-console.log("mining block 2. . . .")
-let data2 = {
-    gym_id: 1,
-    user_member_number: 5678,
-    cert_type: "Top Rope"
-}
-Katchain.addBlock(new Block(1, Date.now(), data2))
 
-console.log("mining block 3. . . .")
-let data3 = {
-    gym_id: 2,
-    user_member_number: 9101112,
-    cert_type: "Top Rope"
-}
-Katchain.addBlock(new Block(1, Date.now(), data3))
+// let Katchain = new Blockchain()
+// console.log("mining block 1. . . .")
+// let data1 = {
+//     gym_id: 1,
+//     user_member_number: 1234,
+//     cert_type: "Lead"
+// }
+// Katchain.addBlock(new Block(1, Date.now(), data1))
+// console.log("mining block 2. . . .")
+// let data2 = {
+//     gym_id: 1,
+//     user_member_number: 5678,
+//     cert_type: "Top Rope"
+// }
+// Katchain.addBlock(new Block(1, Date.now(), data2))
 
-console.log("mining block 4. . . .")
-let data4 = {
-    gym_id: 2,
-    user_member_number: 9101112,
-    cert_type: "Lead"
-}
-Katchain.addBlock(new Block(1, Date.now(), data4))
+// console.log("mining block 3. . . .")
+// let data3 = {
+//     gym_id: 2,
+//     user_member_number: 9101112,
+//     cert_type: "Top Rope"
+// }
+// Katchain.addBlock(new Block(1, Date.now(), data3))
 
-console.log("mining block 5. . . .")
-let data5 = {
-    gym_id: 2,
-    user_member_number: 9101112,
-    cert_type: "Belay Certification Revoked"
-}
-Katchain.addBlock(new Block(1, Date.now(), data5))
+// console.log("mining block 4. . . .")
+// let data4 = {
+//     gym_id: 2,
+//     user_member_number: 9101112,
+//     cert_type: "Lead"
+// }
+// Katchain.addBlock(new Block(1, Date.now(), data4))
+
+// console.log("mining block 5. . . .")
+// let data5 = {
+//     gym_id: 2,
+//     user_member_number: 9101112,
+//     cert_type: "Belay Certification Revoked"
+// }
+// Katchain.addBlock(new Block(1, Date.now(), data5))
 
 // console.log(Katchain.findAllGymBlocks(1))
-console.log(Katchain.findAllUserBlocks(9101112, 2))
+// console.log(Katchain.findAllUserBlocks(9101112, 2))
 
 // console.log(JSON.stringify(Katchain, null, 4))
 // console.log('Is blockchain valid?', Katchain.isChainValid())
