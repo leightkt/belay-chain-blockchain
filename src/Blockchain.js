@@ -1,4 +1,5 @@
 const encrypt = require('crypto-js/sha256')
+const nodeURL = process.argv[3]
 
 class Block {
     constructor(index, timestamp, data, previousHash = '', nonce = 0) {
@@ -34,6 +35,9 @@ class Blockchain {
     constructor(){
         this.chain = [this.createGenesisBlock()]
         this.difficulty = 4
+
+        this.nodeUrl = nodeURL
+        this.networkNodes = []
     }
 
     createGenesisBlock() {
