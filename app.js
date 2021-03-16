@@ -57,7 +57,7 @@ app.post('/register-bulk-nodes', function (req, res) {
     )
 })
 
-app.post('/register-and-broadcase-node', function (req, res) {
+app.post('/register-and-broadcast-node', function (req, res) {
     const nodeURL = req.body.nodeURL
     
     if (BelayChain.networkNodes.indexOf(nodeURL) === -1) {

@@ -7,11 +7,9 @@
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon app.js",
-    "node1": "nodemon --watch src -e js src/api.js 3001 http://localhost:3001",
-    "node2": "nodemon --watch src -e js src/api.js 3002 http://localhost:3002",
-    "node3": "nodemon --watch src -e js src/api.js 3003 http://localhost:3003",
-    "node4": "nodemon --watch src -e js src/api.js 3004 http://localhost:3004",
-    "node5": "nodemon --watch src -e js src/api.js 3005 http://localhost:3005"
+    "node1": "nodemon --watch src -e js app.js 3001 http://localhost:3001",
+    "node2": "nodemon --watch src -e js app.js 3002 http://localhost:3002",
+    "node3": "nodemon --watch src -e js app.js 3003 http://localhost:3003"
   },
   "author": "Kat Leight",
   "license": "ISC",
