@@ -20,7 +20,8 @@ app.use( cors(corsOptions) )
 
 
 const Blockchain = require('./src/Blockchain');
-const { urlencoded } = require('body-parser');
+const { urlencoded, json } = require('body-parser');
+const { response } = require('express');
 const BelayChain = new Blockchain()
 
 
@@ -126,23 +127,17 @@ app.post('/addcertandbroadcast', function (req, res) {
 
     Promise.all(requests)
         .then(data => {
-            console.log(data)
+            res.json( { newblock: BelayChain.getLatestBlock()} )
         })
-        // .then(response => {
-        //     latestBlock = BelayChain.getLatestBlock()
-        //     res.json(
-        //         { newblock: latestBlock }
-        //     )
-        // })
 
 
 })
 
 app.post('/addcertification', function (req, res) {
     const newBlock = req.body
-    const latestBlock = BelayChain.getLatestBlock()
+    const lastBlock = BelayChain.getLatestBlock()
 
-    if (latestBlock.hash === newBlock.previousHash && latestBlock.index === newBlock.index + 1) {
+    if (lastBlock.hash === newBlock.previousHash && lastBlock.index === newBlock.index - 1) {
             BelayChain.chain.push(newBlock)
             res.json(
                 {
