@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors')
-const { v1: uuidv1 } = require('uuid');
+const { v1: uuidv1, NIL } = require('uuid');
 const nodeAddress = uuidv1()
 const reqPromise = require('request-promise')
 
@@ -19,7 +19,8 @@ app.use(bodyParser.json());
 app.use( cors(corsOptions) )
 
 
-const Blockchain = require('./src/Blockchain')
+const Blockchain = require('./src/Blockchain');
+const { urlencoded } = require('body-parser');
 const BelayChain = new Blockchain()
 
 
@@ -27,10 +28,9 @@ const BelayChain = new Blockchain()
 app.post('/register-node', function (req, res) {
     const nodeURL = req.body.nodeURL
 
-    if ((BelayChain.networkNodes.indexOf(nodeURL) === -1) 
-        && (BelayChain.nodeUrl !== nodeURL)) {
+    if (BelayChain.networkNodes.indexOf(nodeURL) === -1
+        && BelayChain.nodeUrl !== nodeURL) {
             BelayChain.networkNodes.push(nodeURL)
-            
         res.json(
             { message: "A node registered successfully"}
         )
@@ -46,8 +46,8 @@ app.post('/register-bulk-nodes', function (req, res) {
     const networkNodes = req.body.networkNodes
 
     networkNodes.forEach(nodeURL => {
-        if((BelayChain.networkNodes.indexOf(nodeURL) === -1)
-        && (BelayChain.nodeURL !== nodeURL)) {
+        if (BelayChain.networkNodes.indexOf(nodeURL) === -1
+        && BelayChain.nodeUrl !== nodeURL) {
             BelayChain.networkNodes.push(nodeURL)
         }
     })
@@ -60,19 +60,24 @@ app.post('/register-bulk-nodes', function (req, res) {
 app.post('/register-and-broadcast-node', function (req, res) {
     const nodeURL = req.body.nodeURL
     
-    if (BelayChain.networkNodes.indexOf(nodeURL) === -1) {
+    if (BelayChain.networkNodes.indexOf(nodeURL) === -1
+        && BelayChain.nodeUrl !== nodeURL) 
+    {
         BelayChain.networkNodes.push(nodeURL)
+    } else {
+        null
     }
 
     const registerNodes = []
     BelayChain.networkNodes.forEach(networkNode => {
-        const requestOptions = {
-            uri: networkNode + '/register-node',
-            method: 'POST',
-            body: { nodeURL: nodeURL },
-            json: true
-        }
-        registerNodes.push(reqPromise(requestOptions))
+            const requestOptions = {
+                uri: networkNode + '/register-node',
+                method: 'POST',
+                body: { nodeURL: nodeURL },
+                json: true
+            }
+
+            registerNodes.push(reqPromise(requestOptions))
     })
 
     Promise.all(registerNodes)
@@ -80,17 +85,17 @@ app.post('/register-and-broadcast-node', function (req, res) {
             const bulkRegisterOptions = {
                 uri: nodeURL + '/register-bulk-nodes',
                 method: 'POST',
-                body: { networkNodes: [...BelayChain.networkNodes, BelayChain.nodeUrl] },
+                body: { networkNodes: [...BelayChain.networkNodes, BelayChain.nodeUrl]},
                 json: true
             }
-
             return reqPromise(bulkRegisterOptions)
         }).then(data => {
-            res.json(
-                { message: 'A node registered with network successfully!'}
-            )
+            res.json({ message: 'Node registered with the network successfullly!'})
         })
+
 })
+
+
 
 
 
@@ -98,14 +103,57 @@ app.get('/blockchain', function (req, res) {
     res.send(BelayChain)
 })
 
-app.post('/certification', function (req, res) {
+app.post('/addcertandbroadcast', function (req, res) {
     const data = {
         gym_id: req.body.gym_id,
         user_member_number: req.body.user_member_number,
         cert_type: req.body.cert_type
     }
+
     const newCertificate = BelayChain.addBlock(data)
-    res.send(newCertificate)
+
+    const requests = []
+    BelayChain.networkNodes.forEach(networkNode => {
+        const requestOptions = {
+            uri: networkNode + '/addcertification',
+            method: 'POST',
+            body: newCertificate,
+            json: true
+        }
+        requests.push(reqPromise(requestOptions))
+        
+    })
+
+    Promise.all(requests)
+        .then(data => {
+            console.log(data)
+        })
+        // .then(response => {
+        //     latestBlock = BelayChain.getLatestBlock()
+        //     res.json(
+        //         { newblock: latestBlock }
+        //     )
+        // })
+
+
+})
+
+app.post('/addcertification', function (req, res) {
+    const newBlock = req.body
+    const latestBlock = BelayChain.getLatestBlock()
+
+    if (latestBlock.hash === newBlock.previousHash && latestBlock.index === newBlock.index + 1) {
+            BelayChain.chain.push(newBlock)
+            res.json(
+                {
+                    message: `New Block added successfully`,
+                }
+            )
+        } else {
+            res.json({
+                message: `Block already on the chain!`
+            })
+        }
 })
 
 app.get('/gym', function (req, res) {

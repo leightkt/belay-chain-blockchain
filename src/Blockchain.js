@@ -41,7 +41,7 @@ class Blockchain {
     }
 
     createGenesisBlock() {
-        return new Block(0, Date.now(), "Lynn Hill is GOAT", "0")
+        return new Block(0, "03/17/2021", "Lynn Hill is GOAT", "0")
     }
 
     getLatestBlock() {
