@@ -97,6 +97,47 @@ app.post('/register-and-broadcast-node', function (req, res) {
 })
 
 
+app.get('/consensus', function (req, res) {
+    const requests = []
+
+    BelayChain.networkNodes.forEach(nodeURL => {
+        const requestOptions = {
+            uri: nodeURL + '/blockchain',
+            method: 'GET',
+            json: true
+        }
+
+        requests.push(reqPromise(requestOptions))
+    })
+
+    Promise.all(requests)
+        .then(blockchains => {
+            const currentChainLength = BelayChain.chain.length
+            let maxChainLength = currentChainLength
+            let longestChain = null
+            
+            blockchains.forEach(blockchain => {
+                if (blockchain.chain.length > maxChainLength) {
+                    maxChainLength = blockchain.chain.length
+                    longestChain = blockchain.chain
+                }
+            })
+
+            if (!longestChain || !BelayChain.isChainValid(longestChain)) {
+                res.json({
+                    message: 'Current chain cannot be replaced!',
+                    chain: BelayChain.chain
+                })
+            } else if (longestChain && BelayChain.isChainValid(longestChain)) {
+                BelayChain.chain = longestChain
+                
+                res.json({
+                    message: 'Chain is updated!',
+                    chain: BelayChain.chain
+                })
+            }
+        })
+})
 
 
 

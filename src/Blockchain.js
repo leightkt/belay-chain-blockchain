@@ -2,7 +2,7 @@ const encrypt = require('crypto-js/sha256')
 const nodeURL = process.argv[3]
 
 class Block {
-    constructor(index, timestamp, data, previousHash = '', nonce = 0) {
+    constructor(index, timestamp, data, previousHash = '', hash = '', nonce = 0) {
         this.index = index
         this.timestamp = timestamp
         this.data = data
@@ -41,7 +41,7 @@ class Blockchain {
     }
 
     createGenesisBlock() {
-        return new Block(0, "03/17/2021", "Lynn Hill is GOAT", "0")
+        return new Block(0, "03/17/2021", "Lynn Hill is GOAT", 0, 100)
     }
 
     getLatestBlock() {
@@ -60,12 +60,26 @@ class Blockchain {
         return newBlock
     }
 
-    isChainValid() {
-        for(let i = 1; i < this.chain.length; i++){
-            const currentBlock = this.chain[i]
-            const previousBlock = this.chain[i - 1]
+    calculateHash(block) {
+        return encrypt(
+            block.index + 
+            block.timestamp + 
+            JSON.stringify(block.data) +
+            block.previousHash +
+            block.nonce
+        ).toString()
+    }
 
-            if(currentBlock.hash !== currentBlock.calculateHash()) {
+    isChainValid(chain) {
+        if (!chain) {
+            return null
+        }
+        
+        for(let i = 1; i < chain.length; i++){
+            const currentBlock = chain[i]
+            const previousBlock = chain[i - 1]
+
+            if(currentBlock.hash !== this.calculateHash(currentBlock)) {
                 return false
             }
 
@@ -80,9 +94,9 @@ class Blockchain {
     validateBlock(blockToVerify) {
         blockToVerify.hash = blockToVerify.calculateHash()
         if(this.chain[blockToVerify.index].hash === blockToVerify.hash){
-            console.log(true)
+            return true
         } else {
-            console.log(blockToVerify)
+            return false
         }
     }
 
@@ -113,6 +127,9 @@ module.exports = Blockchain
 //     cert_type: "Top Rope"
 // }
 // Katchain.addBlock(new Block(1, Date.now(), data2))
+
+// console.log(Katchain.isChainValid(Katchain.chain))
+// console.log(Katchain.chain)
 
 // console.log("mining block 3. . . .")
 // let data3 = {
