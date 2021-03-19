@@ -62,7 +62,7 @@ app.post('/register-node', function (req, res) {
     if (BelayChain.networkNodes.indexOf(nodeURL) === -1
         && BelayChain.nodeUrl !== nodeURL) {
             BelayChain.networkNodes.push(nodeURL)
-            Node.create(nodeURL)
+            Node.create({ nodeURL })
                 .then(node => res.json({ message: "A node registered successfully" }))
     } else {
         res.json(
@@ -82,7 +82,6 @@ app.post('/register-bulk-nodes', function (req, res) {
             if (BelayChain.networkNodes.indexOf(nodeURL) === -1
                 && BelayChain.nodeUrl !== nodeURL) {
                     BelayChain.networkNodes.push(nodeURL)
-                    console.log("hit")
                 const returnedNode = await Node.create({ nodeURL })
             }
         }))
@@ -93,15 +92,19 @@ app.post('/register-bulk-nodes', function (req, res) {
 
 app.post('/register-and-broadcast-node', function (req, res) {
     const nodeURL = req.body.nodeURL
-    
+    let registeredNode = ""
+
     if (BelayChain.networkNodes.indexOf(nodeURL) === -1
-        && BelayChain.nodeUrl !== nodeURL) 
+    && BelayChain.nodeUrl !== nodeURL) 
     {
         BelayChain.networkNodes.push(nodeURL)
-        Node.create(nodeURL)
+        Node.create({ nodeURL })
+            .then(response => registeredNode = response)
     } else {
         null
     }
+    
+    
 
     const registerNodes = []
     BelayChain.networkNodes.forEach(networkNode => {
