@@ -1,29 +1,67 @@
 const express = require('express');
-const bodyParser = require('body-parser');
+// const bodyParser = require('body-parser');
 const cors = require('cors')
 const { v1: uuidv1, NIL } = require('uuid');
-const nodeAddress = uuidv1()
+// const nodeAddress = uuidv1()
 const reqPromise = require('request-promise')
-
-
+const mongoose = require('mongoose')
+const uri = "mongodb+srv://kitkat:FALLoutboi10!@cluster0.f2gkp.mongodb.net/BelayChainNode1?retryWrites=true&w=majority"
+const { Schema } = mongoose
 // const port = process.env.PORT || 9000
 const port = process.argv[2]
 const corsOptions = {
     origin: '*',
     methods: 'GET,POST,PUT,PATCH,DELETE'
 }
-
-const app = express();
-app.use( bodyParser.urlencoded({ extended: false}) )
-app.use(bodyParser.json());
-app.use( cors(corsOptions) )
-
-
 const Blockchain = require('./src/Blockchain');
-const { urlencoded, json } = require('body-parser');
-const { response } = require('express');
-const BelayChain = new Blockchain()
+const app = express();
+// app.use( bodyParser.urlencoded({ extended: false}) )
+// app.use(bodyParser.json());
 
+const blockSchema = new Schema({
+    index: Number,
+    timestamp: Number,
+    data: Object,
+    previousHash: String,
+    hash: String,
+    nonce: Number
+})
+
+const nodeSchema = new Schema({
+    nodeURL: String
+})
+
+const Block = mongoose.model('Block', blockSchema)
+const Node = mongoose.model('Node', nodeSchema)
+
+
+
+app.use(cors(corsOptions))
+app.use(express.json())
+mongoose.connect(uri, {useNewUrlParser: true, useUnifiedTopology: true})
+    .then(() => console.log("MONGODB CONNECTED"))
+    .catch(console.error)
+
+
+
+// const { urlencoded, json } = require('body-parser');
+// const { response } = require('express');
+let BelayChain = []
+
+const loadBelayChain = () => {
+    Block.find({})
+        .then(blocks => {
+            BelayChain = new Blockchain(blocks)
+            return BelayChain
+        })
+        .then(BelayChain => {
+            Node.find({})
+                .then((nodes => {
+                    nodes.forEach(node => BelayChain.networkNodes.push(node.nodeURL))
+                    console.log(BelayChain)
+                }))
+        })
+}
 
 
 app.post('/register-node', function (req, res) {
@@ -154,24 +192,27 @@ app.post('/addcertandbroadcast', function (req, res) {
 
     const newCertificate = BelayChain.addBlock(data)
 
-    const requests = []
-    BelayChain.networkNodes.forEach(networkNode => {
-        const requestOptions = {
-            uri: networkNode + '/addcertification',
-            method: 'POST',
-            body: newCertificate,
-            json: true
-        }
-        requests.push(reqPromise(requestOptions))
-        
-    })
+    if(BelayChain.isChainValid(BelayChain.chain)) {
+        Block.create(newCertificate)
+            .then(block => {
+                const requests = []
+                BelayChain.networkNodes.forEach(networkNode => {
+                const requestOptions = {
+                uri: networkNode + '/addcertification',
+                method: 'POST',
+                body: newCertificate,
+                json: true
+                }
+                requests.push(reqPromise(requestOptions))
+            
+            })
 
-    Promise.all(requests)
-        .then(data => {
-            res.json( { newblock: BelayChain.getLatestBlock()} )
-        })
-
-
+            Promise.all(requests)
+                .then(data => {
+                    res.json( { newblock: BelayChain.getLatestBlock()} )
+                })
+            })
+    }
 })
 
 app.post('/addcertification', function (req, res) {
@@ -180,11 +221,15 @@ app.post('/addcertification', function (req, res) {
 
     if (lastBlock.hash === newBlock.previousHash && lastBlock.index === newBlock.index - 1) {
             BelayChain.chain.push(newBlock)
-            res.json(
-                {
-                    message: `New Block added successfully`,
-                }
-            )
+            if(BelayChain.isChainValid(BelayChain.chain)) {
+                Block.create(newBlock)
+                    .then(block => res.json({ message: 'New Block added successfully' }))
+            }
+            // res.json(
+            //     {
+            //         message: `New Block added successfully`,
+            //     }
+            // )
         } else {
             res.json({
                 message: `Block already on the chain!`
@@ -204,4 +249,10 @@ app.get('/member', function (req, res) {
     res.send(memberCertifications)
 })
 
-app.listen(port, () => console.log(`running on ${port}`))
+
+
+
+
+
+// app.listen(port, () => console.log(process.argv[3]))
+app.listen(port, loadBelayChain())
