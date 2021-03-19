@@ -3,7 +3,9 @@ const cors = require('cors')
 const { v1: uuidv1, NIL } = require('uuid');
 const reqPromise = require('request-promise')
 const mongoose = require('mongoose')
-const uri = "mongodb+srv://kitkat:FALLoutboi10!@cluster0.f2gkp.mongodb.net/BelayChainNode1?retryWrites=true&w=majority"
+const dotevn = require('dotenv')
+dotevn.config()
+const uri = `mongodb+srv://${process.env.DB_username}:${process.env.DB_password}@cluster0.f2gkp.mongodb.net/BelayChainNode1?retryWrites=true&w=majority`
 const { Schema } = mongoose
 // const port = process.env.PORT || 9000
 const port = process.argv[2]
@@ -29,7 +31,6 @@ const nodeSchema = new Schema({
 
 const Block = mongoose.model('Block', blockSchema)
 const Node = mongoose.model('Node', nodeSchema)
-
 
 
 app.use(cors(corsOptions))
@@ -244,9 +245,4 @@ app.get('/member', function (req, res) {
 })
 
 
-
-
-
-
-// app.listen(port, () => console.log(process.argv[3]))
 app.listen(port, loadBelayChain())
