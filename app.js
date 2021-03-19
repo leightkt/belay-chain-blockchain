@@ -1,8 +1,6 @@
 const express = require('express');
-// const bodyParser = require('body-parser');
 const cors = require('cors')
 const { v1: uuidv1, NIL } = require('uuid');
-// const nodeAddress = uuidv1()
 const reqPromise = require('request-promise')
 const mongoose = require('mongoose')
 const uri = "mongodb+srv://kitkat:FALLoutboi10!@cluster0.f2gkp.mongodb.net/BelayChainNode1?retryWrites=true&w=majority"
@@ -15,8 +13,6 @@ const corsOptions = {
 }
 const Blockchain = require('./src/Blockchain');
 const app = express();
-// app.use( bodyParser.urlencoded({ extended: false}) )
-// app.use(bodyParser.json());
 
 const blockSchema = new Schema({
     index: Number,
@@ -43,9 +39,6 @@ mongoose.connect(uri, {useNewUrlParser: true, useUnifiedTopology: true})
     .catch(console.error)
 
 
-
-// const { urlencoded, json } = require('body-parser');
-// const { response } = require('express');
 let BelayChain = []
 
 const loadBelayChain = () => {
@@ -58,7 +51,6 @@ const loadBelayChain = () => {
             Node.find({})
                 .then((nodes => {
                     nodes.forEach(node => BelayChain.networkNodes.push(node.nodeURL))
-                    console.log(BelayChain)
                 }))
         })
 }
@@ -70,9 +62,8 @@ app.post('/register-node', function (req, res) {
     if (BelayChain.networkNodes.indexOf(nodeURL) === -1
         && BelayChain.nodeUrl !== nodeURL) {
             BelayChain.networkNodes.push(nodeURL)
-        res.json(
-            { message: "A node registered successfully"}
-        )
+            Node.create(nodeURL)
+                .then(node => res.json({ message: "A node registered successfully" }))
     } else {
         res.json(
             { errors: "This node cannot register!"}
@@ -84,16 +75,20 @@ app.post('/register-node', function (req, res) {
 app.post('/register-bulk-nodes', function (req, res) {
     const networkNodes = req.body.networkNodes
 
-    networkNodes.forEach(nodeURL => {
-        if (BelayChain.networkNodes.indexOf(nodeURL) === -1
-        && BelayChain.nodeUrl !== nodeURL) {
-            BelayChain.networkNodes.push(nodeURL)
-        }
-    })
+    pushNodes(networkNodes)
 
-    res.json(
-        { message: 'Bulk Register successful!'}
-    )
+    async function pushNodes (networkNodes) {
+        Promise.all(networkNodes.map(async (nodeURL) => {
+            if (BelayChain.networkNodes.indexOf(nodeURL) === -1
+                && BelayChain.nodeUrl !== nodeURL) {
+                    BelayChain.networkNodes.push(nodeURL)
+                    console.log("hit")
+                const returnedNode = await Node.create({ nodeURL })
+            }
+        }))
+            .then(response => res.json({ message: 'Bulk Register successful!'}))
+    }
+
 })
 
 app.post('/register-and-broadcast-node', function (req, res) {
@@ -103,6 +98,7 @@ app.post('/register-and-broadcast-node', function (req, res) {
         && BelayChain.nodeUrl !== nodeURL) 
     {
         BelayChain.networkNodes.push(nodeURL)
+        Node.create(nodeURL)
     } else {
         null
     }
@@ -225,11 +221,6 @@ app.post('/addcertification', function (req, res) {
                 Block.create(newBlock)
                     .then(block => res.json({ message: 'New Block added successfully' }))
             }
-            // res.json(
-            //     {
-            //         message: `New Block added successfully`,
-            //     }
-            // )
         } else {
             res.json({
                 message: `Block already on the chain!`
