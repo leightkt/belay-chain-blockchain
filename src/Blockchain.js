@@ -100,6 +100,10 @@ class Blockchain {
         }
     }
 
+    verifyHash(hash) {
+        return this.chain.filter(block => block.hash === hash)
+    }
+
     findAllGymBlocks(gym_id) {
         return this.chain.filter(block => block.data.gym_id === gym_id)
     }

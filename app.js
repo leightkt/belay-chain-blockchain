@@ -244,5 +244,15 @@ app.post('/member', function (req, res) {
     res.send(memberCertifications)
 })
 
+app.post('/verify', function (req, res) {
+    const block = BelayChain.verifyHash(req.body.hash)
+
+    if( block.length !== 0 ) {
+        res.json(block)
+    } else {
+        res.json({ errors: "Could not Find Certification"})
+    }
+})
+
 
 app.listen(port, loadBelayChain())
