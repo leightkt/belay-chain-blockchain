@@ -232,12 +232,12 @@ app.post('/addcertification', function (req, res) {
         }
 })
 
-app.get('/gym', function (req, res) {
+app.post('/gym', function (req, res) {
     const gymCertifications = BelayChain.findAllGymBlocks(req.body.gym_id)
     res.send(gymCertifications)
 })
 
-app.get('/member', function (req, res) {
+app.post('/member', function (req, res) {
     const memberCertifications = BelayChain.findAllMemberBlocks(
         req.body.user_member_number, req.body.gym_id
     )
