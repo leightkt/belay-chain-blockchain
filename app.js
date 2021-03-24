@@ -169,14 +169,27 @@ app.get('/consensus', function (req, res) {
             } else if (longestChain && BelayChain.isChainValid(longestChain)) {
                 BelayChain.chain = longestChain
                 
-                res.json({
-                    message: 'Chain is updated!',
-                    chain: BelayChain.chain
-                })
+                Block.deleteMany({})
+                    .then(async () => {
+                        Promise.all(longestChain.map(async (block) => {
+                            const blockToUpload = {
+                                index: block.index,
+                                timestamp: block.timestamp,
+                                data: block.data,
+                                previousHash: block.previousHash,
+                                hash: block.hash,
+                                nonce: block.nonce
+                            }
+                            const returnedBlock = await Block.create(blockToUpload)
+                        }))
+                        .then(res.json({
+                            message: 'Chain is updated!',
+                            chain: BelayChain.chain
+                        }))
+                    })
             }
         })
 })
-
 
 
 app.get('/blockchain', function (req, res) {
