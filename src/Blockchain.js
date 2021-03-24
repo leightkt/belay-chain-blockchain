@@ -110,7 +110,7 @@ class Blockchain {
         })
 
         if (revoked.length !== 0) {
-            return revoked
+            return revoked[0]
         } else {
             return block
         }
