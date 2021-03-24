@@ -247,7 +247,7 @@ app.post('/member', function (req, res) {
 app.post('/verify', function (req, res) {
     const block = BelayChain.verifyHash(req.body.hash)
 
-    if( block.index ) {
+    if( block ) {
         res.json(block)
     } else {
         res.json({ errors: "Could not Find Certification"})
