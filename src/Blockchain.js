@@ -101,7 +101,19 @@ class Blockchain {
     }
 
     verifyHash(hash) {
-        return this.chain.filter(block => block.hash === hash)
+        const block =  this.chain.filter(block => block.hash === hash)[0]
+        const gym = block.data.gym_id
+        const member = block.data.user_member_number
+
+        const revoked = this.chain.filter(bloc => {
+            return bloc.data.gym_id === gym && bloc.data.user_member_number === member && bloc.data.cert_type === "Revoke Previous Certification" && bloc.index > block.index
+        })
+
+        if (revoked.length !== 0) {
+            return revoked
+        } else {
+            return block
+        }
     }
 
     findAllGymBlocks(gym_id) {
