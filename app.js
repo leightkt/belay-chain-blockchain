@@ -270,14 +270,11 @@ app.post('/verify', function (req, res) {
 
 function authenticate(request, response, next) {
     const secret = "BoobsAndBuffaloSauce"
-    const authHeader = request.get("Authorization")
-    console.log(authHeader)
+    const token= request.get("Authorization")
+
     if (!authHeader) {
         response.json({ errors: "no token"})
     }
-
-    const token = authHeader
-    console.log(token)
 
     jwt.verify(token, secret, (error, payload) => {
         if(error) response.json({ errors: error.message })
