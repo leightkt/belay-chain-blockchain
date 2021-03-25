@@ -15,6 +15,7 @@ const corsOptions = {
     methods: 'GET,POST,PUT,PATCH,DELETE'
 }
 const Blockchain = require('./src/Blockchain');
+const bodyParser = require('body-parser');
 const app = express();
 
 const blockSchema = new Schema({
@@ -36,6 +37,7 @@ const Node = mongoose.model('Node', nodeSchema)
 
 app.use(cors(corsOptions))
 app.use(express.json())
+
 mongoose.connect(uri, {useNewUrlParser: true, useUnifiedTopology: true})
     .then(() => console.log("MONGODB CONNECTED"))
     .catch(console.error)
@@ -192,6 +194,9 @@ app.get('/consensus', authenticate, function (req, res) {
         })
 })
 
+app.get('/nodes', authenticate, function (req, res) {
+    res.send(BelayChain.networkNode)
+})
 
 app.get('/blockchain', authenticate, function (req, res) {
     res.send(BelayChain)
@@ -268,6 +273,8 @@ app.post('/verify', function (req, res) {
     }
 })
 
+
+
 function authenticate(request, response, next) {
     const secret = "BoobsAndBuffaloSauce"
     const authHeader = request.get("Authorization")
@@ -282,8 +289,6 @@ function authenticate(request, response, next) {
         if(error) response.json({ errors: error.message })
 
         if(payload.id) {
-            console.log("hit auth")
-            console.log(payload.id)
             next()
         } else {
             response.json({ errors: "Invalid Token"})
