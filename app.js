@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors')
+const jwt = require('jsonwebtoken')
 const { v1: uuidv1, NIL } = require('uuid');
 const reqPromise = require('request-promise')
 const mongoose = require('mongoose')
@@ -91,7 +92,7 @@ app.post('/register-bulk-nodes', function (req, res) {
 
 })
 
-app.post('/register-and-broadcast-node', function (req, res) {
+app.post('/register-and-broadcast-node', authenticate, function (req, res) {
     const nodeURL = req.body.nodeURL
     let registeredNode = ""
 
@@ -135,7 +136,7 @@ app.post('/register-and-broadcast-node', function (req, res) {
 })
 
 
-app.get('/consensus', function (req, res) {
+app.get('/consensus', authenticate, function (req, res) {
     const requests = []
 
     BelayChain.networkNodes.forEach(nodeURL => {
@@ -192,11 +193,11 @@ app.get('/consensus', function (req, res) {
 })
 
 
-app.get('/blockchain', function (req, res) {
+app.get('/blockchain', authenticate, function (req, res) {
     res.send(BelayChain)
 })
 
-app.post('/addcertandbroadcast', function (req, res) {
+app.post('/addcertandbroadcast', authenticate, function (req, res) {
     const data = {
         gym_id: req.body.gym_id,
         user_member_number: req.body.user_member_number,
@@ -245,12 +246,12 @@ app.post('/addcertification', function (req, res) {
         }
 })
 
-app.post('/gym', function (req, res) {
+app.post('/gym', authenticate, function (req, res) {
     const gymCertifications = BelayChain.findAllGymBlocks(req.body.gym_id)
     res.send(gymCertifications)
 })
 
-app.post('/member', function (req, res) {
+app.post('/member', authenticate, function (req, res) {
     const memberCertifications = BelayChain.findAllMemberBlocks(
         req.body.user_member_number, req.body.gym_id
     )
@@ -266,6 +267,32 @@ app.post('/verify', function (req, res) {
         res.json({ errors: "Could not Find Certification"})
     }
 })
+
+function authenticate(request, response, next) {
+    const secret = "BoobsAndBuffaloSauce"
+    const authHeader = request.get("Authorization")
+    console.log(authHeader)
+    if (!authHeader) {
+        response.json({ errors: "no token"})
+    }
+
+    const token = authHeader
+    console.log(token)
+
+    jwt.verify(token, secret, (error, payload) => {
+        if(error) response.json({ errors: error.message })
+
+        if(payload.id) {
+            console.log("hit auth")
+            console.log(payload.id)
+            next()
+        } else {
+            response.json({ errors: "Invalid Token"})
+        }
+    })
+
+
+}
 
 
 app.listen(port, loadBelayChain())
