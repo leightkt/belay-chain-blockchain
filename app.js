@@ -138,7 +138,7 @@ app.post('/register-and-broadcast-node', authenticate, function (req, res) {
 })
 
 
-app.get('/consensus', authenticate, function (req, res) {
+app.get('/concensus', authenticate, function (req, res) {
     const requests = []
 
     BelayChain.networkNodes.forEach(nodeURL => {
@@ -198,9 +198,15 @@ app.get('/nodes', authenticate, function (req, res) {
     res.send(BelayChain.networkNodes)
 })
 
-// add route to validate blockchain
+app.get('/validateChain', authenticate, function (req, res) {
+    if (BelayChain.isChainValid(BelayChain.chain)) {
+        res.json({ message: "Chain Valid"})
+    } else {
+        res.json({ message: "Warning: Chain Invalid!"})
+    }
+})
 
-app.get('/blockchain', authenticate, function (req, res) {
+app.get('/blockchain', function (req, res) {
     res.send(BelayChain)
 })
 
