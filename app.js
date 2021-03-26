@@ -139,59 +139,70 @@ app.post('/register-and-broadcast-node', authenticate, function (req, res) {
 
 
 app.get('/concensus', authenticate, function (req, res) {
-    const requests = []
+    const id = req.token_id
+    const payload = { id }
+    const secret = "BoobsAndBuffaloSauce"
 
-    BelayChain.networkNodes.forEach(nodeURL => {
-        const requestOptions = {
-            uri: nodeURL + '/blockchain',
-            method: 'GET',
-            json: true
-        }
+    jwt.sign(payload, secret, (error, token) => {
+        if (error) throw new Error("Signing Token didn't work")
+        
+        const requests = []
+
+        BelayChain.networkNodes.forEach(nodeURL => {
+            const requestOptions = {
+                uri: nodeURL + '/blockchain',
+                method: 'GET',
+                headers: { 'Authorization': token },
+                json: true
+            }
 
         requests.push(reqPromise(requestOptions))
-    })
+        })
 
-    Promise.all(requests)
-        .then(blockchains => {
-            const currentChainLength = BelayChain.chain.length
-            let maxChainLength = currentChainLength
-            let longestChain = null
-            
-            blockchains.forEach(blockchain => {
-                if (blockchain.chain.length > maxChainLength) {
-                    maxChainLength = blockchain.chain.length
-                    longestChain = blockchain.chain
+        Promise.all(requests)
+            .then(blockchains => {
+                const currentChainLength = BelayChain.chain.length
+                let maxChainLength = currentChainLength
+                let longestChain = null
+                
+                blockchains.forEach(blockchain => {
+                    if (blockchain.chain.length > maxChainLength) {
+                        maxChainLength = blockchain.chain.length
+                        longestChain = blockchain.chain
+                    }
+                })
+
+                if (!longestChain || !BelayChain.isChainValid(longestChain)) {
+                    res.json({
+                        message: 'Current chain cannot be replaced!',
+                        chain: BelayChain.chain
+                    })
+                } else if (longestChain && BelayChain.isChainValid(longestChain)) {
+                    BelayChain.chain = longestChain
+                    
+                    Block.deleteMany({})
+                        .then(async () => {
+                            Promise.all(longestChain.map(async (block) => {
+                                const blockToUpload = {
+                                    index: block.index,
+                                    timestamp: block.timestamp,
+                                    data: block.data,
+                                    previousHash: block.previousHash,
+                                    hash: block.hash,
+                                    nonce: block.nonce
+                                }
+                                const returnedBlock = await Block.create(blockToUpload)
+                            }))
+                            .then(res.json({
+                                message: 'Chain is updated!',
+                                chain: BelayChain.chain
+                            }))
+                        })
                 }
             })
+        })   
 
-            if (!longestChain || !BelayChain.isChainValid(longestChain)) {
-                res.json({
-                    message: 'Current chain cannot be replaced!',
-                    chain: BelayChain.chain
-                })
-            } else if (longestChain && BelayChain.isChainValid(longestChain)) {
-                BelayChain.chain = longestChain
-                
-                Block.deleteMany({})
-                    .then(async () => {
-                        Promise.all(longestChain.map(async (block) => {
-                            const blockToUpload = {
-                                index: block.index,
-                                timestamp: block.timestamp,
-                                data: block.data,
-                                previousHash: block.previousHash,
-                                hash: block.hash,
-                                nonce: block.nonce
-                            }
-                            const returnedBlock = await Block.create(blockToUpload)
-                        }))
-                        .then(res.json({
-                            message: 'Chain is updated!',
-                            chain: BelayChain.chain
-                        }))
-                    })
-            }
-        })
+    
 })
 
 app.get('/nodes', authenticate, function (req, res) {
@@ -206,7 +217,7 @@ app.get('/validateChain', authenticate, function (req, res) {
     }
 })
 
-app.get('/blockchain', function (req, res) {
+app.get('/blockchain', authenticate, function (req, res) {
     res.send(BelayChain)
 })
 
@@ -297,6 +308,7 @@ function authenticate(request, response, next) {
         if(error) response.json({ errors: error.message })
 
         if(payload.id) {
+            request.token_id = payload.id
             next()
         } else {
             response.json({ errors: "Invalid Token"})
