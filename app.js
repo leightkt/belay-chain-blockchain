@@ -195,8 +195,10 @@ app.get('/consensus', authenticate, function (req, res) {
 })
 
 app.get('/nodes', authenticate, function (req, res) {
-    res.send(BelayChain.networkNode)
+    res.send(BelayChain.networkNodes)
 })
+
+// add route to validate blockchain
 
 app.get('/blockchain', authenticate, function (req, res) {
     res.send(BelayChain)
