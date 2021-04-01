@@ -7,7 +7,7 @@ BelayChain is a full stack application that stores rock climbing gym belay certi
  
 
 ## SUMMARY
-This app securly stores rock climbing gym belay certifications on a blockchain so that gyms and members can access their belay certifications anywhere, anytime, eliminating the need for ANOTHER belay test when a member walks into a new gym. 
+This app securely stores rock climbing gym belay certifications on a blockchain so that gyms and members can access their belay certifications anywhere, anytime, eliminating the need for ANOTHER belay test when a member walks into a new gym. 
 
 APP FEATURES
 
@@ -71,4 +71,4 @@ This app was created using Node.js, Express, Mongoose, MongoDB, Bcrypt, JWT, Rub
 
 
 ## DEMONSTRATION
-A demostration of the app can be viewed here: 
+A demostration of the app can be viewed here: https://youtu.be/ufqZ0E2ht78
