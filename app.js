@@ -109,6 +109,9 @@ app.post('/register-and-broadcast-node', authenticate, function (req, res) {
     }
     
     
+    const id = req.token_id
+    const payload = { id }
+    const secret = "BootsAndBuffaloSauce"
 
     const registerNodes = []
     BelayChain.networkNodes.forEach(networkNode => {
@@ -141,7 +144,7 @@ app.post('/register-and-broadcast-node', authenticate, function (req, res) {
 app.get('/concensus', authenticate, function (req, res) {
     const id = req.token_id
     const payload = { id }
-    const secret = "BoobsAndBuffaloSauce"
+    const secret = "BootsAndBuffaloSauce"
 
     jwt.sign(payload, secret, (error, token) => {
         if (error) throw new Error("Signing Token didn't work")
@@ -295,7 +298,7 @@ app.post('/verify', function (req, res) {
 
 
 function authenticate(request, response, next) {
-    const secret = "BoobsAndBuffaloSauce"
+    const secret = "BootsAndBuffaloSauce"
     const authHeader = request.get("Authorization")
 
     if (!authHeader) {
