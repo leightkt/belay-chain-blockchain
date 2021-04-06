@@ -60,7 +60,7 @@ const loadBelayChain = () => {
 }
 
 
-app.post('/register-node', function (req, res) {
+app.post('/register-node', authenticate, function (req, res) {
     const nodeURL = req.body.nodeURL
 
     if (BelayChain.networkNodes.indexOf(nodeURL) === -1
@@ -76,7 +76,7 @@ app.post('/register-node', function (req, res) {
     
 })
 
-app.post('/register-bulk-nodes', function (req, res) {
+app.post('/register-bulk-nodes', authenticate, function (req, res) {
     const networkNodes = req.body.networkNodes
 
     pushNodes(networkNodes)
@@ -112,31 +112,38 @@ app.post('/register-and-broadcast-node', authenticate, function (req, res) {
     const id = req.token_id
     const payload = { id }
     const secret = "BootsAndBuffaloSauce"
+    
+    jwt.sign(payload, secret, (error, token) => {
+        if (error) throw new Error("Signing Token didn't work")
 
-    const registerNodes = []
-    BelayChain.networkNodes.forEach(networkNode => {
-            const requestOptions = {
-                uri: networkNode + '/register-node',
-                method: 'POST',
-                body: { nodeURL: nodeURL },
-                json: true
-            }
+        const registerNodes = []
+        BelayChain.networkNodes.forEach(networkNode => {
+                const requestOptions = {
+                    uri: networkNode + '/register-node',
+                    method: 'POST',
+                    body: { nodeURL: nodeURL },
+                    headers: { 'Authorization': token },
+                    json: true
+                }
 
-            registerNodes.push(reqPromise(requestOptions))
-    })
+                registerNodes.push(reqPromise(requestOptions))
+        })
 
-    Promise.all(registerNodes)
+        Promise.all(registerNodes)
         .then(data => {
             const bulkRegisterOptions = {
                 uri: nodeURL + '/register-bulk-nodes',
                 method: 'POST',
                 body: { networkNodes: [...BelayChain.networkNodes, BelayChain.nodeUrl]},
+                headers: { 'Authorization': token },
                 json: true
             }
             return reqPromise(bulkRegisterOptions)
         }).then(data => {
             res.json({ message: 'Node registered with the network successfullly!'})
         })
+    })
+
 
 })
 
