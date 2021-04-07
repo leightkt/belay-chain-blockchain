@@ -5,7 +5,7 @@ const reqPromise = require('request-promise')
 const { Block, Node } = require('./database/mongoose')
 const Blockchain = require('./src/Blockchain');
 const connectDatabase = require('./database/database')
-const authenticate = require('./routes/authenticate')
+const authenticate = require('./src/authenticate')
 const port = process.argv[2]
 const corsOptions = {
     origin: '*',
