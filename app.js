@@ -1,13 +1,11 @@
 const express = require('express');
 const cors = require('cors')
-const jwt = require('jsonwebtoken')
 const { v1: uuidv1, NIL } = require('uuid');
 const reqPromise = require('request-promise')
-const mongoose = require('mongoose')
+const { Block, Node } = require('./database/mongoose')
 const Blockchain = require('./src/Blockchain');
 const connectDatabase = require('./database/database')
-
-const { Schema } = mongoose
+const authenticate = require('./routes/authenticate')
 const port = process.argv[2]
 const corsOptions = {
     origin: '*',
@@ -18,21 +16,6 @@ const app = express();
 app.use(cors(corsOptions))
 app.use(express.json())
 
-const blockSchema = new Schema({
-    index: Number,
-    timestamp: Number,
-    data: Object,
-    previousHash: String,
-    hash: String,
-    nonce: Number
-})
-
-const nodeSchema = new Schema({
-    nodeURL: String
-})
-
-const Block = mongoose.model('Block', blockSchema)
-const Node = mongoose.model('Node', nodeSchema)
 
 
 let BelayChain = []
@@ -51,6 +34,81 @@ const loadBelayChain = () => {
         })
 }
 
+
+app.get('/blockchain', authenticate, function (req, res) {
+    res.send(BelayChain)
+})
+
+app.post('/addcertandbroadcast', authenticate, function (req, res) {
+    const data = {
+        gym_id: req.body.gym_id,
+        user_member_number: req.body.user_member_number,
+        cert_type: req.body.cert_type
+    }
+
+    const newCertificate = BelayChain.addBlock(data)
+
+    if(BelayChain.isChainValid(BelayChain.chain)) {
+        Block.create(newCertificate)
+            .then(block => {
+                const requests = []
+                BelayChain.networkNodes.forEach(networkNode => {
+                const requestOptions = {
+                uri: networkNode + '/addcertification',
+                method: 'POST',
+                body: newCertificate,
+                json: true
+                }
+                requests.push(reqPromise(requestOptions))
+            
+            })
+
+            Promise.all(requests)
+                .then(data => {
+                    res.json( { newblock: BelayChain.getLatestBlock()} )
+                })
+            })
+    }
+})
+
+app.post('/addcertification', function (req, res) {
+    const newBlock = req.body
+    const lastBlock = BelayChain.getLatestBlock()
+
+    if (lastBlock.hash === newBlock.previousHash && lastBlock.index === newBlock.index - 1) {
+            BelayChain.chain.push(newBlock)
+            if(BelayChain.isChainValid(BelayChain.chain)) {
+                Block.create(newBlock)
+                    .then(block => res.json({ message: 'New Block added successfully' }))
+            }
+        } else {
+            res.json({
+                message: `Block already on the chain!`
+            })
+        }
+})
+
+app.post('/gym', authenticate, function (req, res) {
+    const gymCertifications = BelayChain.findAllGymBlocks(req.body.gym_id)
+    res.send(gymCertifications)
+})
+
+app.post('/member', authenticate, function (req, res) {
+    const memberCertifications = BelayChain.findAllMemberBlocks(
+        req.body.user_member_number, req.body.gym_id
+    )
+    res.send(memberCertifications)
+})
+
+app.post('/verify', function (req, res) {
+    const block = BelayChain.verifyHash(req.body.hash)
+
+    if( block ) {
+        res.json(block)
+    } else {
+        res.json({ errors: "Could not Find Certification"})
+    }
+})
 
 app.post('/register-node', authenticate, function (req, res) {
     const nodeURL = req.body.nodeURL
@@ -219,106 +277,7 @@ app.get('/validateChain', authenticate, function (req, res) {
     }
 })
 
-app.get('/blockchain', authenticate, function (req, res) {
-    res.send(BelayChain)
-})
-
-app.post('/addcertandbroadcast', authenticate, function (req, res) {
-    const data = {
-        gym_id: req.body.gym_id,
-        user_member_number: req.body.user_member_number,
-        cert_type: req.body.cert_type
-    }
-
-    const newCertificate = BelayChain.addBlock(data)
-
-    if(BelayChain.isChainValid(BelayChain.chain)) {
-        Block.create(newCertificate)
-            .then(block => {
-                const requests = []
-                BelayChain.networkNodes.forEach(networkNode => {
-                const requestOptions = {
-                uri: networkNode + '/addcertification',
-                method: 'POST',
-                body: newCertificate,
-                json: true
-                }
-                requests.push(reqPromise(requestOptions))
-            
-            })
-
-            Promise.all(requests)
-                .then(data => {
-                    res.json( { newblock: BelayChain.getLatestBlock()} )
-                })
-            })
-    }
-})
-
-app.post('/addcertification', function (req, res) {
-    const newBlock = req.body
-    const lastBlock = BelayChain.getLatestBlock()
-
-    if (lastBlock.hash === newBlock.previousHash && lastBlock.index === newBlock.index - 1) {
-            BelayChain.chain.push(newBlock)
-            if(BelayChain.isChainValid(BelayChain.chain)) {
-                Block.create(newBlock)
-                    .then(block => res.json({ message: 'New Block added successfully' }))
-            }
-        } else {
-            res.json({
-                message: `Block already on the chain!`
-            })
-        }
-})
-
-app.post('/gym', authenticate, function (req, res) {
-    const gymCertifications = BelayChain.findAllGymBlocks(req.body.gym_id)
-    res.send(gymCertifications)
-})
-
-app.post('/member', authenticate, function (req, res) {
-    const memberCertifications = BelayChain.findAllMemberBlocks(
-        req.body.user_member_number, req.body.gym_id
-    )
-    res.send(memberCertifications)
-})
-
-app.post('/verify', function (req, res) {
-    const block = BelayChain.verifyHash(req.body.hash)
-
-    if( block ) {
-        res.json(block)
-    } else {
-        res.json({ errors: "Could not Find Certification"})
-    }
-})
-
-
-
-function authenticate(request, response, next) {
-    const secret = "BootsAndBuffaloSauce"
-    const authHeader = request.get("Authorization")
-
-    if (!authHeader) {
-        response.json({ errors: "no token"})
-    }
-
-    const token = authHeader
-
-    jwt.verify(token, secret, (error, payload) => {
-        if(error) response.json({ errors: error.message })
-
-        if(payload.id) {
-            request.token_id = payload.id
-            next()
-        } else {
-            response.json({ errors: "Invalid Token"})
-        }
-    })
-
-
-}
 
 
 app.listen(port, loadBelayChain())
+
