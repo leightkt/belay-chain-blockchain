@@ -4,19 +4,19 @@ const jwt = require('jsonwebtoken')
 const { v1: uuidv1, NIL } = require('uuid');
 const reqPromise = require('request-promise')
 const mongoose = require('mongoose')
-const dotevn = require('dotenv')
-dotevn.config()
-const uri = `mongodb+srv://${process.env.DB_username}:${process.env.DB_password}@cluster0.f2gkp.mongodb.net/BelayChainNode1?retryWrites=true&w=majority`
+const Blockchain = require('./src/Blockchain');
+const connectDatabase = require('./database/database')
+
 const { Schema } = mongoose
-// const port = process.env.PORT || 9000
 const port = process.argv[2]
 const corsOptions = {
     origin: '*',
     methods: 'GET,POST,PUT,PATCH,DELETE'
 }
-const Blockchain = require('./src/Blockchain');
-const bodyParser = require('body-parser');
 const app = express();
+
+app.use(cors(corsOptions))
+app.use(express.json())
 
 const blockSchema = new Schema({
     index: Number,
@@ -33,14 +33,6 @@ const nodeSchema = new Schema({
 
 const Block = mongoose.model('Block', blockSchema)
 const Node = mongoose.model('Node', nodeSchema)
-
-
-app.use(cors(corsOptions))
-app.use(express.json())
-
-mongoose.connect(uri, {useNewUrlParser: true, useUnifiedTopology: true})
-    .then(() => console.log("MONGODB CONNECTED"))
-    .catch(console.error)
 
 
 let BelayChain = []
