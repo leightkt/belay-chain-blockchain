@@ -18,7 +18,7 @@ app.use(express.json())
 
 
 
-let BelayChain = []
+let BelayChain = {}
 
 const loadBelayChain = () => {
     Block.find({})
