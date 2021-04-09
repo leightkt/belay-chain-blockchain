@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors')
+const jwt = require('jsonwebtoken')
 const { v1: uuidv1, NIL } = require('uuid');
 const reqPromise = require('request-promise')
 const { Block, Node } = require('./database/mongoose')
