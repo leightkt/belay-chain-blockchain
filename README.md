@@ -67,8 +67,8 @@ This app was built with an administrator role that can log on and check the stat
  
 
 ## TECHNOLOGY
-This app was created using Node.js, Express, Mongoose, MongoDB, Bcrypt, JWT, Ruby on Rails, postgresQL, React, React Router, Redux, Javascript, HTML, and CSS. 
+This app was created using Node.js, Express, Mongoose, MongoDB, Bcrypt, JWT, Ruby on Rails, postgresQL, React, React Router, Redux, Javascript, and Crypto-js. 
 
 
 ## DEMONSTRATION
-A demostration of the app can be viewed here: https://youtu.be/ufqZ0E2ht78
+A demostration of the app can be viewed here: https://youtu.be/lMzP-tAFLZk
